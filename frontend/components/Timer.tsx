@@ -345,15 +345,15 @@ export function Timer() {
           </CardHeader>
           <CardContent>
             <Select 
-              value={selectedTaskId?.toString() || ""} 
-              onValueChange={(value) => setSelectedTaskId(value ? parseInt(value) : undefined)}
+              value={selectedTaskId?.toString() || "none"} 
+              onValueChange={(value) => setSelectedTaskId(value === "none" ? undefined : parseInt(value))}
               disabled={timerState === 'running' || sessionType !== 'work'}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a task (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No task selected</SelectItem>
+                <SelectItem value="none">No task selected</SelectItem>
                 {tasksData?.tasks
                   ?.filter(task => !task.isCompleted)
                   ?.map((task) => (
