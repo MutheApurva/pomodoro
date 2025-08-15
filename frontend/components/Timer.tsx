@@ -24,15 +24,19 @@ export function Timer() {
   const queryClient = useQueryClient();
 
   // Fetch settings
-  const { data: settings } = useQuery({
+  const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery({
     queryKey: ['settings'],
     queryFn: () => backend.pomodoro.getSettings(),
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Fetch tasks
-  const { data: tasksData } = useQuery({
+  const { data: tasksData, isLoading: tasksLoading, error: tasksError } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => backend.pomodoro.listTasks(),
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Complete session mutation
@@ -52,6 +56,19 @@ export function Timer() {
       });
     },
   });
+
+  const getDurationForSessionType = (type: SessionType, settings: UserSettings): number => {
+    switch (type) {
+      case 'work':
+        return settings.workDuration;
+      case 'short_break':
+        return settings.shortBreakDuration;
+      case 'long_break':
+        return settings.longBreakDuration;
+      default:
+        return 25;
+    }
+  };
 
   // Update timer when settings change
   useEffect(() => {
@@ -86,19 +103,6 @@ export function Timer() {
     };
   }, [timerState, timeLeft]);
 
-  const getDurationForSessionType = (type: SessionType, settings: UserSettings): number => {
-    switch (type) {
-      case 'work':
-        return settings.workDuration;
-      case 'short_break':
-        return settings.shortBreakDuration;
-      case 'long_break':
-        return settings.longBreakDuration;
-      default:
-        return 25;
-    }
-  };
-
   const handleTimerComplete = async () => {
     setTimerState('idle');
     
@@ -106,34 +110,38 @@ export function Timer() {
 
     const duration = getDurationForSessionType(sessionType, settings);
     
-    // Save the completed session
-    await completeSessionMutation.mutateAsync({
-      taskId: sessionType === 'work' ? selectedTaskId : undefined,
-      sessionType,
-      durationMinutes: duration,
-    });
+    try {
+      // Save the completed session
+      await completeSessionMutation.mutateAsync({
+        taskId: sessionType === 'work' ? selectedTaskId : undefined,
+        sessionType,
+        durationMinutes: duration,
+      });
 
-    // Show completion notification
-    toast({
-      title: `${sessionType === 'work' ? 'Work' : 'Break'} session completed!`,
-      description: `Great job! You completed a ${duration}-minute ${sessionType.replace('_', ' ')} session.`,
-    });
+      // Show completion notification
+      toast({
+        title: `${sessionType === 'work' ? 'Work' : 'Break'} session completed!`,
+        description: `Great job! You completed a ${duration}-minute ${sessionType.replace('_', ' ')} session.`,
+      });
 
-    // Auto-advance to next session type
-    if (sessionType === 'work') {
-      const newCompletedSessions = completedWorkSessions + 1;
-      setCompletedWorkSessions(newCompletedSessions);
-      
-      if (newCompletedSessions % settings.sessionsUntilLongBreak === 0) {
-        setSessionType('long_break');
-        setTimeLeft(settings.longBreakDuration * 60);
+      // Auto-advance to next session type
+      if (sessionType === 'work') {
+        const newCompletedSessions = completedWorkSessions + 1;
+        setCompletedWorkSessions(newCompletedSessions);
+        
+        if (newCompletedSessions % settings.sessionsUntilLongBreak === 0) {
+          setSessionType('long_break');
+          setTimeLeft(settings.longBreakDuration * 60);
+        } else {
+          setSessionType('short_break');
+          setTimeLeft(settings.shortBreakDuration * 60);
+        }
       } else {
-        setSessionType('short_break');
-        setTimeLeft(settings.shortBreakDuration * 60);
+        setSessionType('work');
+        setTimeLeft(settings.workDuration * 60);
       }
-    } else {
-      setSessionType('work');
-      setTimeLeft(settings.workDuration * 60);
+    } catch (error) {
+      console.error('Error completing session:', error);
     }
   };
 
@@ -187,7 +195,29 @@ export function Timer() {
     }
   };
 
-  if (!settings) {
+  // Show error state if there's an error
+  if (settingsError || tasksError) {
+    return (
+      <Card>
+        <CardContent className="text-center py-8">
+          <p className="text-red-600 mb-4">
+            Error loading data: {settingsError?.message || tasksError?.message}
+          </p>
+          <Button 
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['settings'] });
+              queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            }}
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show loading state
+  if (settingsLoading) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center h-64">
@@ -195,6 +225,22 @@ export function Timer() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading timer settings...</p>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Fallback if settings is still null
+  if (!settings) {
+    return (
+      <Card>
+        <CardContent className="text-center py-8">
+          <p className="text-gray-600 mb-4">Unable to load settings</p>
+          <Button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['settings'] })}
+          >
+            Retry
+          </Button>
         </CardContent>
       </Card>
     );
@@ -309,12 +355,12 @@ export function Timer() {
               <SelectContent>
                 <SelectItem value="">No task selected</SelectItem>
                 {tasksData?.tasks
-                  .filter(task => !task.isCompleted)
-                  .map((task) => (
+                  ?.filter(task => !task.isCompleted)
+                  ?.map((task) => (
                     <SelectItem key={task.id} value={task.id.toString()}>
                       {task.title} ({task.completedPomodoros}/{task.estimatedPomodoros})
                     </SelectItem>
-                  ))}
+                  )) || []}
               </SelectContent>
             </Select>
           </CardContent>
