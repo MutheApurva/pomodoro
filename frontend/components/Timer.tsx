@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Play, Pause, Square, RotateCcw } from 'lucide-react';
+import { Play, Pause, Square, RotateCcw, Target } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import backend from '~backend/client';
 import type { Task, UserSettings } from '~backend/pomodoro/types';
@@ -246,20 +246,20 @@ export function Timer() {
   const getSessionTypeColor = (type: SessionType): string => {
     switch (type) {
       case 'work':
-        return 'from-red-400/80 to-red-600/80';
+        return 'from-rose-500/80 to-pink-600/80';
       case 'short_break':
-        return 'from-green-400/80 to-green-600/80';
+        return 'from-emerald-500/80 to-teal-600/80';
       case 'long_break':
-        return 'from-blue-400/80 to-blue-600/80';
+        return 'from-cyan-500/80 to-blue-600/80';
       default:
-        return 'from-gray-400/80 to-gray-600/80';
+        return 'from-slate-500/80 to-slate-600/80';
     }
   };
 
   // Show error state if there's an error
   if (settingsError || tasksError) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
         <div className="text-center">
           <p className="text-red-400 mb-4">
             Error loading data: {settingsError?.message || tasksError?.message}
@@ -269,7 +269,7 @@ export function Timer() {
               queryClient.invalidateQueries({ queryKey: ['settings'] });
               queryClient.invalidateQueries({ queryKey: ['tasks'] });
             }}
-            className="bg-gradient-to-r from-purple-500/80 to-blue-500/80 hover:from-purple-600/80 hover:to-blue-600/80 backdrop-blur-sm border border-white/20"
+            className="bg-gradient-to-r from-emerald-500/80 to-cyan-500/80 hover:from-emerald-600/80 hover:to-cyan-600/80 backdrop-blur-sm border border-emerald-400/30"
           >
             Retry
           </Button>
@@ -281,11 +281,11 @@ export function Timer() {
   // Show loading state
   if (settingsLoading) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto mb-4"></div>
-            <p className="text-white/80">Loading timer settings...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400 mx-auto mb-4"></div>
+            <p className="text-slate-300">Loading timer settings...</p>
           </div>
         </div>
       </div>
@@ -295,12 +295,12 @@ export function Timer() {
   // Fallback if settings is still null
   if (!settings) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
         <div className="text-center">
-          <p className="text-white/80 mb-4">Unable to load settings</p>
+          <p className="text-slate-300 mb-4">Unable to load settings</p>
           <Button 
             onClick={() => queryClient.invalidateQueries({ queryKey: ['settings'] })}
-            className="bg-gradient-to-r from-purple-500/80 to-blue-500/80 hover:from-purple-600/80 hover:to-blue-600/80 backdrop-blur-sm border border-white/20"
+            className="bg-gradient-to-r from-emerald-500/80 to-cyan-500/80 hover:from-emerald-600/80 hover:to-cyan-600/80 backdrop-blur-sm border border-emerald-400/30"
           >
             Retry
           </Button>
@@ -311,32 +311,33 @@ export function Timer() {
 
   return (
     <div className="space-y-6">
-      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
-        <div className={`bg-gradient-to-r ${getSessionTypeColor(sessionType)} backdrop-blur-sm p-6`}>
-          <h2 className="text-center text-2xl font-bold text-white">
-            {sessionType === 'work' ? 'Work Session' : 
-             sessionType === 'short_break' ? 'Short Break' : 'Long Break'}
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+        <div className={`bg-gradient-to-r ${getSessionTypeColor(sessionType)} backdrop-blur-sm p-6 border-b border-white/10`}>
+          <h2 className="text-center text-2xl font-bold text-white flex items-center justify-center gap-2">
+            <Target className="w-6 h-6" />
+            {sessionType === 'work' ? 'Focus Session' : 
+             sessionType === 'short_break' ? 'Quick Break' : 'Long Break'}
           </h2>
         </div>
         <div className="p-8">
-          <div className="text-center space-y-6">
-            <div className="text-6xl font-mono font-bold text-white drop-shadow-lg">
+          <div className="text-center space-y-8">
+            <div className="text-7xl font-mono font-bold text-white drop-shadow-lg tracking-wider">
               {formatTime(timeLeft)}
             </div>
             
             <div className="relative">
               <Progress 
                 value={getProgress()} 
-                className="w-full h-3 bg-white/20 backdrop-blur-sm"
+                className="w-full h-4 bg-white/10 backdrop-blur-sm rounded-full overflow-hidden"
               />
             </div>
 
-            <div className="flex justify-center gap-4">
+            <div className="flex justify-center gap-3">
               {timerState === 'idle' || timerState === 'paused' ? (
                 <Button 
                   onClick={handleStart} 
                   size="lg" 
-                  className="bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-600/80 hover:to-green-700/80 backdrop-blur-sm border border-white/20 text-white shadow-lg"
+                  className="bg-gradient-to-r from-emerald-500/80 to-teal-600/80 hover:from-emerald-600/80 hover:to-teal-700/80 backdrop-blur-sm border border-emerald-400/30 text-white shadow-lg px-8 py-3 text-lg"
                 >
                   <Play className="w-5 h-5 mr-2" />
                   {timerState === 'paused' ? 'Resume' : 'Start'}
@@ -345,7 +346,7 @@ export function Timer() {
                 <Button 
                   onClick={handlePause} 
                   size="lg" 
-                  className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white shadow-lg"
+                  className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white shadow-lg px-8 py-3 text-lg"
                 >
                   <Pause className="w-5 h-5 mr-2" />
                   Pause
@@ -356,7 +357,7 @@ export function Timer() {
                 onClick={handleStop} 
                 size="lg" 
                 disabled={timerState === 'idle'}
-                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white shadow-lg disabled:opacity-50"
+                className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white shadow-lg disabled:opacity-50 px-6 py-3"
               >
                 <Square className="w-5 h-5 mr-2" />
                 Stop
@@ -365,7 +366,7 @@ export function Timer() {
               <Button 
                 onClick={handleReset} 
                 size="lg" 
-                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white shadow-lg"
+                className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white shadow-lg px-6 py-3"
               >
                 <RotateCcw className="w-5 h-5 mr-2" />
                 Reset
@@ -376,7 +377,7 @@ export function Timer() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 shadow-2xl">
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl">
           <h3 className="text-lg font-semibold text-white mb-4">Session Type</h3>
           <Select 
             value={sessionType} 
@@ -389,28 +390,28 @@ export function Timer() {
             }}
             disabled={timerState === 'running'}
           >
-            <SelectTrigger className="bg-white/20 backdrop-blur-sm border-white/30 text-white">
+            <SelectTrigger className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-white/90 backdrop-blur-xl border-white/30">
-              <SelectItem value="work">Work ({settings.workDuration}m)</SelectItem>
-              <SelectItem value="short_break">Short Break ({settings.shortBreakDuration}m)</SelectItem>
+            <SelectContent className="bg-slate-800/95 backdrop-blur-xl border-white/20">
+              <SelectItem value="work">Focus Session ({settings.workDuration}m)</SelectItem>
+              <SelectItem value="short_break">Quick Break ({settings.shortBreakDuration}m)</SelectItem>
               <SelectItem value="long_break">Long Break ({settings.longBreakDuration}m)</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 shadow-2xl">
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl">
           <h3 className="text-lg font-semibold text-white mb-4">Current Task</h3>
           <Select 
             value={selectedTaskId?.toString() || "none"} 
             onValueChange={(value) => setSelectedTaskId(value === "none" ? undefined : parseInt(value))}
             disabled={timerState === 'running' || sessionType !== 'work'}
           >
-            <SelectTrigger className="bg-white/20 backdrop-blur-sm border-white/30 text-white">
+            <SelectTrigger className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
               <SelectValue placeholder="Select a task (optional)" />
             </SelectTrigger>
-            <SelectContent className="bg-white/90 backdrop-blur-xl border-white/30">
+            <SelectContent className="bg-slate-800/95 backdrop-blur-xl border-white/20">
               <SelectItem value="none">No task selected</SelectItem>
               {tasksData?.tasks
                 ?.filter(task => !task.isCompleted)
@@ -424,15 +425,15 @@ export function Timer() {
         </div>
       </div>
 
-      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 shadow-2xl">
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-sm text-white/70">Completed Work Sessions</p>
-            <p className="text-2xl font-bold text-white">{completedWorkSessions}</p>
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl">
+        <div className="grid grid-cols-2 gap-6">
+          <div className="text-center">
+            <p className="text-sm text-slate-400 mb-2">Completed Sessions</p>
+            <p className="text-3xl font-bold text-emerald-400">{completedWorkSessions}</p>
           </div>
-          <div>
-            <p className="text-sm text-white/70">Until Long Break</p>
-            <p className="text-2xl font-bold text-white">
+          <div className="text-center">
+            <p className="text-sm text-slate-400 mb-2">Until Long Break</p>
+            <p className="text-3xl font-bold text-cyan-400">
               {settings.sessionsUntilLongBreak - (completedWorkSessions % settings.sessionsUntilLongBreak)}
             </p>
           </div>
