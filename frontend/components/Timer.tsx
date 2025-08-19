@@ -309,6 +309,8 @@ export function Timer() {
     );
   }
 
+  const activeTasks = tasksData?.tasks?.filter(task => !task.isCompleted) || [];
+
   return (
     <div className="space-y-6">
       <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
@@ -413,17 +415,49 @@ export function Timer() {
             </SelectTrigger>
             <SelectContent className="bg-slate-800/95 backdrop-blur-xl border-white/20">
               <SelectItem value="none">No task selected</SelectItem>
-              {tasksData?.tasks
-                ?.filter(task => !task.isCompleted)
-                ?.map((task) => (
-                  <SelectItem key={task.id} value={task.id.toString()}>
-                    {task.title} ({task.completedPomodoros}/{task.estimatedPomodoros})
-                  </SelectItem>
-                )) || []}
+              {activeTasks.map((task) => (
+                <SelectItem key={task.id} value={task.id.toString()}>
+                  {task.title} ({task.completedPomodoros}/{task.estimatedPomodoros})
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
       </div>
+
+      {/* Active Tasks Quick View */}
+      {activeTasks.length > 0 && (
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl">
+          <h3 className="text-lg font-semibold text-white mb-4">Active Tasks</h3>
+          <div className="space-y-3">
+            {activeTasks.slice(0, 3).map((task) => (
+              <div key={task.id} className="flex items-center justify-between p-3 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+                <div className="flex-1">
+                  <h4 className="font-medium text-white">{task.title}</h4>
+                  <p className="text-sm text-slate-300">
+                    {task.completedPomodoros}/{task.estimatedPomodoros} pomodoros
+                  </p>
+                </div>
+                <div className="w-20">
+                  <div className="w-full bg-white/10 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all"
+                      style={{
+                        width: `${Math.min((task.completedPomodoros / task.estimatedPomodoros) * 100, 100)}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            {activeTasks.length > 3 && (
+              <p className="text-sm text-slate-400 text-center">
+                +{activeTasks.length - 3} more tasks
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl">
         <div className="grid grid-cols-2 gap-6">

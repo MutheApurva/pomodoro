@@ -10,6 +10,7 @@ export function Statistics() {
     queryFn: () => backend.pomodoro.getStatistics(),
     retry: 3,
     retryDelay: 1000,
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   if (isLoading) {
