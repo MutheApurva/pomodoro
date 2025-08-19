@@ -396,9 +396,9 @@ export function Timer() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-slate-800/95 backdrop-blur-xl border-white/20">
-              <SelectItem value="work">Focus Session ({settings.workDuration}m)</SelectItem>
-              <SelectItem value="short_break">Quick Break ({settings.shortBreakDuration}m)</SelectItem>
-              <SelectItem value="long_break">Long Break ({settings.longBreakDuration}m)</SelectItem>
+              <SelectItem value="work" className="text-white hover:text-slate-900">Focus Session ({settings.workDuration}m)</SelectItem>
+              <SelectItem value="short_break" className="text-white hover:text-slate-900">Quick Break ({settings.shortBreakDuration}m)</SelectItem>
+              <SelectItem value="long_break" className="text-white hover:text-slate-900">Long Break ({settings.longBreakDuration}m)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -414,9 +414,9 @@ export function Timer() {
               <SelectValue placeholder="Select a task (optional)" />
             </SelectTrigger>
             <SelectContent className="bg-slate-800/95 backdrop-blur-xl border-white/20">
-              <SelectItem value="none">No task selected</SelectItem>
+              <SelectItem value="none" className="text-white hover:text-slate-900">No task selected</SelectItem>
               {activeTasks.map((task) => (
-                <SelectItem key={task.id} value={task.id.toString()}>
+                <SelectItem key={task.id} value={task.id.toString()} className="text-white hover:text-slate-900">
                   {task.title} ({task.completedPomodoros}/{task.estimatedPomodoros})
                 </SelectItem>
               ))}
