@@ -18,9 +18,11 @@ export function Settings() {
   const queryClient = useQueryClient();
 
   // Fetch settings
-  const { data: fetchedSettings, isLoading } = useQuery({
+  const { data: fetchedSettings, isLoading, error } = useQuery({
     queryKey: ['settings'],
     queryFn: () => backend.pomodoro.getSettings(),
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Update settings mutation
@@ -109,35 +111,43 @@ export function Settings() {
 
   if (isLoading || !settings) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center h-64">
+      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading settings...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto mb-4"></div>
+            <p className="text-white/80">Loading settings...</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 shadow-2xl">
+        <div className="text-center">
+          <p className="text-red-400 mb-4">Error loading settings: {error.message}</p>
+        </div>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Pomodoro Settings</h2>
-        <p className="text-gray-600">Customize your work and break intervals</p>
+        <h2 className="text-2xl font-bold mb-2 text-white">Pomodoro Settings</h2>
+        <p className="text-white/70">Customize your work and break intervals</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Timer Durations
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 shadow-2xl">
+        <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+          <Clock className="w-5 h-5" />
+          Timer Durations
+        </h3>
+        <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="work-duration">Work Session (minutes)</Label>
+              <Label htmlFor="work-duration" className="text-white">Work Session (minutes)</Label>
               <Input
                 id="work-duration"
                 type="number"
@@ -145,14 +155,15 @@ export function Settings() {
                 max="60"
                 value={settings.workDuration}
                 onChange={(e) => handleSettingChange('workDuration', parseInt(e.target.value) || 1)}
+                className="bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder-white/50"
               />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-white/60">
                 Recommended: 25 minutes for optimal focus
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="short-break-duration">Short Break (minutes)</Label>
+              <Label htmlFor="short-break-duration" className="text-white">Short Break (minutes)</Label>
               <Input
                 id="short-break-duration"
                 type="number"
@@ -160,14 +171,15 @@ export function Settings() {
                 max="30"
                 value={settings.shortBreakDuration}
                 onChange={(e) => handleSettingChange('shortBreakDuration', parseInt(e.target.value) || 1)}
+                className="bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder-white/50"
               />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-white/60">
                 Quick rest between work sessions
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="long-break-duration">Long Break (minutes)</Label>
+              <Label htmlFor="long-break-duration" className="text-white">Long Break (minutes)</Label>
               <Input
                 id="long-break-duration"
                 type="number"
@@ -175,14 +187,15 @@ export function Settings() {
                 max="60"
                 value={settings.longBreakDuration}
                 onChange={(e) => handleSettingChange('longBreakDuration', parseInt(e.target.value) || 1)}
+                className="bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder-white/50"
               />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-white/60">
                 Extended rest after multiple work sessions
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sessions-until-long-break">Sessions Until Long Break</Label>
+              <Label htmlFor="sessions-until-long-break" className="text-white">Sessions Until Long Break</Label>
               <Input
                 id="sessions-until-long-break"
                 type="number"
@@ -190,20 +203,21 @@ export function Settings() {
                 max="10"
                 value={settings.sessionsUntilLongBreak}
                 onChange={(e) => handleSettingChange('sessionsUntilLongBreak', parseInt(e.target.value) || 2)}
+                className="bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder-white/50"
               />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-white/60">
                 Number of work sessions before a long break
               </p>
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-white/20" />
 
           <div className="flex justify-between items-center">
             <Button
               variant="outline"
               onClick={resetToDefaults}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm border-white/30 text-white"
             >
               <RotateCcw className="w-4 h-4" />
               Reset to Defaults
@@ -214,54 +228,51 @@ export function Settings() {
                 variant="outline"
                 onClick={handleReset}
                 disabled={!hasChanges}
+                className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-white/30 text-white disabled:opacity-50"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={!hasChanges || updateSettingsMutation.isPending}
-                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                className="bg-gradient-to-r from-purple-500/80 to-blue-500/80 hover:from-purple-600/80 hover:to-blue-600/80 backdrop-blur-sm border border-white/20 text-white"
               >
                 <Save className="w-4 h-4 mr-2" />
                 {updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Preview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-red-50 rounded-lg border-2 border-red-200">
-              <div className="text-2xl font-bold text-red-600 mb-1">
-                {settings.workDuration}m
-              </div>
-              <div className="text-sm text-red-700">Work Session</div>
+      <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-6 shadow-2xl">
+        <h3 className="text-lg font-semibold text-white mb-4">Preview</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-gradient-to-br from-red-400/20 to-red-600/20 rounded-2xl border-2 border-red-400/30 backdrop-blur-sm">
+            <div className="text-2xl font-bold text-red-300 mb-1">
+              {settings.workDuration}m
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg border-2 border-green-200">
-              <div className="text-2xl font-bold text-green-600 mb-1">
-                {settings.shortBreakDuration}m
-              </div>
-              <div className="text-sm text-green-700">Short Break</div>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
-              <div className="text-2xl font-bold text-blue-600 mb-1">
-                {settings.longBreakDuration}m
-              </div>
-              <div className="text-sm text-blue-700">Long Break</div>
-            </div>
+            <div className="text-sm text-red-200">Work Session</div>
           </div>
-          <div className="text-center mt-4 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">
-              Long break after every <strong>{settings.sessionsUntilLongBreak}</strong> work sessions
-            </p>
+          <div className="text-center p-4 bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-2xl border-2 border-green-400/30 backdrop-blur-sm">
+            <div className="text-2xl font-bold text-green-300 mb-1">
+              {settings.shortBreakDuration}m
+            </div>
+            <div className="text-sm text-green-200">Short Break</div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="text-center p-4 bg-gradient-to-br from-blue-400/20 to-blue-600/20 rounded-2xl border-2 border-blue-400/30 backdrop-blur-sm">
+            <div className="text-2xl font-bold text-blue-300 mb-1">
+              {settings.longBreakDuration}m
+            </div>
+            <div className="text-sm text-blue-200">Long Break</div>
+          </div>
+        </div>
+        <div className="text-center mt-4 p-3 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
+          <p className="text-sm text-white/70">
+            Long break after every <strong className="text-white">{settings.sessionsUntilLongBreak}</strong> work sessions
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
