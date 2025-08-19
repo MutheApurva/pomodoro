@@ -37,6 +37,7 @@ export function TaskList() {
       backend.pomodoro.createTask(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
       setIsCreateDialogOpen(false);
       setNewTask({ title: '', description: '', estimatedPomodoros: 1 });
       toast({
@@ -60,6 +61,7 @@ export function TaskList() {
       backend.pomodoro.updateTask(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
       setEditingTask(null);
       toast({
         title: 'Success',
@@ -81,6 +83,7 @@ export function TaskList() {
     mutationFn: (id: number) => backend.pomodoro.deleteTask({ id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
       toast({
         title: 'Success',
         description: 'Task deleted successfully!',
