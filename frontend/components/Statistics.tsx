@@ -10,7 +10,7 @@ export function Statistics() {
     queryFn: () => backend.pomodoro.getStatistics(),
     retry: 3,
     retryDelay: 1000,
-    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
     staleTime: 0, // Always consider data stale to ensure fresh fetches
   });
 

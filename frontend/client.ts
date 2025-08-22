@@ -83,11 +83,15 @@ export interface ClientOptions {
  * Import the endpoint handlers to derive the types for the client.
  */
 import { completeSession as api_pomodoro_complete_session_completeSession } from "~backend/pomodoro/complete_session";
+import { createNote as api_pomodoro_create_note_createNote } from "~backend/pomodoro/create_note";
 import { createTask as api_pomodoro_create_task_createTask } from "~backend/pomodoro/create_task";
+import { deleteNote as api_pomodoro_delete_note_deleteNote } from "~backend/pomodoro/delete_note";
 import { deleteTask as api_pomodoro_delete_task_deleteTask } from "~backend/pomodoro/delete_task";
 import { getSettings as api_pomodoro_get_settings_getSettings } from "~backend/pomodoro/get_settings";
 import { getStatistics as api_pomodoro_get_statistics_getStatistics } from "~backend/pomodoro/get_statistics";
+import { listNotes as api_pomodoro_list_notes_listNotes } from "~backend/pomodoro/list_notes";
 import { listTasks as api_pomodoro_list_tasks_listTasks } from "~backend/pomodoro/list_tasks";
+import { updateNote as api_pomodoro_update_note_updateNote } from "~backend/pomodoro/update_note";
 import { updateSettings as api_pomodoro_update_settings_updateSettings } from "~backend/pomodoro/update_settings";
 import { updateTask as api_pomodoro_update_task_updateTask } from "~backend/pomodoro/update_task";
 
@@ -99,11 +103,15 @@ export namespace pomodoro {
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
             this.completeSession = this.completeSession.bind(this)
+            this.createNote = this.createNote.bind(this)
             this.createTask = this.createTask.bind(this)
+            this.deleteNote = this.deleteNote.bind(this)
             this.deleteTask = this.deleteTask.bind(this)
             this.getSettings = this.getSettings.bind(this)
             this.getStatistics = this.getStatistics.bind(this)
+            this.listNotes = this.listNotes.bind(this)
             this.listTasks = this.listTasks.bind(this)
+            this.updateNote = this.updateNote.bind(this)
             this.updateSettings = this.updateSettings.bind(this)
             this.updateTask = this.updateTask.bind(this)
         }
@@ -118,12 +126,28 @@ export namespace pomodoro {
         }
 
         /**
+         * Creates a new note.
+         */
+        public async createNote(params: RequestType<typeof api_pomodoro_create_note_createNote>): Promise<ResponseType<typeof api_pomodoro_create_note_createNote>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/notes`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pomodoro_create_note_createNote>
+        }
+
+        /**
          * Creates a new task.
          */
         public async createTask(params: RequestType<typeof api_pomodoro_create_task_createTask>): Promise<ResponseType<typeof api_pomodoro_create_task_createTask>> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/tasks`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pomodoro_create_task_createTask>
+        }
+
+        /**
+         * Deletes a note.
+         */
+        public async deleteNote(params: { id: number }): Promise<void> {
+            await this.baseClient.callTypedAPI(`/notes/${encodeURIComponent(params.id)}`, {method: "DELETE", body: undefined})
         }
 
         /**
@@ -152,12 +176,36 @@ export namespace pomodoro {
         }
 
         /**
+         * Retrieves all notes, ordered by creation date (latest first).
+         */
+        public async listNotes(): Promise<ResponseType<typeof api_pomodoro_list_notes_listNotes>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/notes`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pomodoro_list_notes_listNotes>
+        }
+
+        /**
          * Retrieves all tasks, ordered by creation date (latest first).
          */
         public async listTasks(): Promise<ResponseType<typeof api_pomodoro_list_tasks_listTasks>> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/tasks`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pomodoro_list_tasks_listTasks>
+        }
+
+        /**
+         * Updates an existing note.
+         */
+        public async updateNote(params: RequestType<typeof api_pomodoro_update_note_updateNote>): Promise<ResponseType<typeof api_pomodoro_update_note_updateNote>> {
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                content: params.content,
+                title:   params.title,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/notes/${encodeURIComponent(params.id)}`, {method: "PUT", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pomodoro_update_note_updateNote>
         }
 
         /**

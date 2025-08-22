@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ interface TimerData {
   timeLeft: number;
   selectedTaskId?: number;
   completedWorkSessions: number;
-  startTime?: number;
+  totalDuration: number;
 }
 
 const TIMER_STORAGE_KEY = 'pomodoro-timer-state';
@@ -29,7 +29,7 @@ export function Timer() {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [selectedTaskId, setSelectedTaskId] = useState<number | undefined>();
   const [completedWorkSessions, setCompletedWorkSessions] = useState(0);
-  const [startTime, setStartTime] = useState<number | undefined>();
+  const [totalDuration, setTotalDuration] = useState(25 * 60);
   
   const intervalRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
@@ -43,22 +43,10 @@ export function Timer() {
         const parsed: TimerData = JSON.parse(savedState);
         setTimerState(parsed.timerState);
         setSessionType(parsed.sessionType);
+        setTimeLeft(parsed.timeLeft);
         setSelectedTaskId(parsed.selectedTaskId);
         setCompletedWorkSessions(parsed.completedWorkSessions);
-        
-        // Calculate current time left if timer was running
-        if (parsed.timerState === 'running' && parsed.startTime) {
-          const elapsed = Math.floor((Date.now() - parsed.startTime) / 1000);
-          const newTimeLeft = Math.max(0, parsed.timeLeft - elapsed);
-          setTimeLeft(newTimeLeft);
-          setStartTime(parsed.startTime);
-          
-          if (newTimeLeft === 0) {
-            setTimerState('idle');
-          }
-        } else {
-          setTimeLeft(parsed.timeLeft);
-        }
+        setTotalDuration(parsed.totalDuration);
       } catch (error) {
         console.error('Error loading timer state:', error);
       }
@@ -66,17 +54,21 @@ export function Timer() {
   }, []);
 
   // Save timer state to localStorage whenever it changes
-  useEffect(() => {
+  const saveTimerState = useCallback(() => {
     const timerData: TimerData = {
       timerState,
       sessionType,
       timeLeft,
       selectedTaskId,
       completedWorkSessions,
-      startTime,
+      totalDuration,
     };
     localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(timerData));
-  }, [timerState, sessionType, timeLeft, selectedTaskId, completedWorkSessions, startTime]);
+  }, [timerState, sessionType, timeLeft, selectedTaskId, completedWorkSessions, totalDuration]);
+
+  useEffect(() => {
+    saveTimerState();
+  }, [saveTimerState]);
 
   // Fetch settings
   const { data: settings, isLoading: settingsLoading, error: settingsError } = useQuery({
@@ -125,11 +117,13 @@ export function Timer() {
     }
   };
 
-  // Update timer when settings change (only if idle)
+  // Update timer when settings change (only if idle and no saved state)
   useEffect(() => {
     if (settings && timerState === 'idle' && !localStorage.getItem(TIMER_STORAGE_KEY)) {
       const duration = getDurationForSessionType(sessionType, settings);
-      setTimeLeft(duration * 60);
+      const durationInSeconds = duration * 60;
+      setTimeLeft(durationInSeconds);
+      setTotalDuration(durationInSeconds);
     }
   }, [settings, sessionType, timerState]);
 
@@ -160,7 +154,6 @@ export function Timer() {
 
   const handleTimerComplete = async () => {
     setTimerState('idle');
-    setStartTime(undefined);
     
     if (!settings) return;
 
@@ -187,14 +180,20 @@ export function Timer() {
         
         if (newCompletedSessions % settings.sessionsUntilLongBreak === 0) {
           setSessionType('long_break');
-          setTimeLeft(settings.longBreakDuration * 60);
+          const newDuration = settings.longBreakDuration * 60;
+          setTimeLeft(newDuration);
+          setTotalDuration(newDuration);
         } else {
           setSessionType('short_break');
-          setTimeLeft(settings.shortBreakDuration * 60);
+          const newDuration = settings.shortBreakDuration * 60;
+          setTimeLeft(newDuration);
+          setTotalDuration(newDuration);
         }
       } else {
         setSessionType('work');
-        setTimeLeft(settings.workDuration * 60);
+        const newDuration = settings.workDuration * 60;
+        setTimeLeft(newDuration);
+        setTotalDuration(newDuration);
       }
     } catch (error) {
       console.error('Error completing session:', error);
@@ -203,20 +202,18 @@ export function Timer() {
 
   const handleStart = () => {
     setTimerState('running');
-    setStartTime(Date.now());
   };
 
   const handlePause = () => {
     setTimerState('paused');
-    setStartTime(undefined);
   };
 
   const handleStop = () => {
     setTimerState('idle');
-    setStartTime(undefined);
     if (settings) {
-      const duration = getDurationForSessionType(sessionType, settings);
-      setTimeLeft(duration * 60);
+      const duration = getDurationForSessionType(sessionType, settings) * 60;
+      setTimeLeft(duration);
+      setTotalDuration(duration);
     }
   };
 
@@ -224,11 +221,21 @@ export function Timer() {
     setTimerState('idle');
     setCompletedWorkSessions(0);
     setSessionType('work');
-    setStartTime(undefined);
     if (settings) {
-      setTimeLeft(settings.workDuration * 60);
+      const duration = settings.workDuration * 60;
+      setTimeLeft(duration);
+      setTotalDuration(duration);
     }
     localStorage.removeItem(TIMER_STORAGE_KEY);
+  };
+
+  const handleSessionTypeChange = (value: SessionType) => {
+    setSessionType(value);
+    if (timerState === 'idle' && settings) {
+      const duration = getDurationForSessionType(value, settings) * 60;
+      setTimeLeft(duration);
+      setTotalDuration(duration);
+    }
   };
 
   const formatTime = (seconds: number): string => {
@@ -238,8 +245,7 @@ export function Timer() {
   };
 
   const getProgress = (): number => {
-    if (!settings) return 0;
-    const totalDuration = getDurationForSessionType(sessionType, settings) * 60;
+    if (totalDuration === 0) return 0;
     return ((totalDuration - timeLeft) / totalDuration) * 100;
   };
 
@@ -383,13 +389,7 @@ export function Timer() {
           <h3 className="text-lg font-semibold text-white mb-4">Session Type</h3>
           <Select 
             value={sessionType} 
-            onValueChange={(value: SessionType) => {
-              setSessionType(value);
-              if (timerState === 'idle') {
-                const duration = getDurationForSessionType(value, settings);
-                setTimeLeft(duration * 60);
-              }
-            }}
+            onValueChange={handleSessionTypeChange}
             disabled={timerState === 'running'}
           >
             <SelectTrigger className="bg-white/10 backdrop-blur-sm border-white/20 text-white">

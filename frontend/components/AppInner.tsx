@@ -3,8 +3,9 @@ import { Timer } from './Timer';
 import { TaskList } from './TaskList';
 import { Statistics } from './Statistics';
 import { Settings } from './Settings';
+import { Notes } from './Notes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, CheckSquare, BarChart3, Settings as SettingsIcon } from 'lucide-react';
+import { Clock, CheckSquare, BarChart3, Settings as SettingsIcon, FileText } from 'lucide-react';
 
 export function AppInner() {
   const [activeTab, setActiveTab] = useState('timer');
@@ -20,7 +21,7 @@ export function AppInner() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-1 mb-8 shadow-2xl">
-          <TabsList className="grid w-full grid-cols-4 bg-transparent gap-1">
+          <TabsList className="grid w-full grid-cols-5 bg-transparent gap-1">
             <TabsTrigger 
               value="timer" 
               className="flex items-center gap-2 bg-transparent hover:bg-white/10 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/20 data-[state=active]:to-cyan-500/20 data-[state=active]:border data-[state=active]:border-emerald-400/30 backdrop-blur-sm text-slate-300 data-[state=active]:text-white rounded-xl transition-all duration-200"
@@ -34,6 +35,13 @@ export function AppInner() {
             >
               <CheckSquare className="w-4 h-4" />
               Tasks
+            </TabsTrigger>
+            <TabsTrigger 
+              value="notes" 
+              className="flex items-center gap-2 bg-transparent hover:bg-white/10 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/20 data-[state=active]:to-cyan-500/20 data-[state=active]:border data-[state=active]:border-emerald-400/30 backdrop-blur-sm text-slate-300 data-[state=active]:text-white rounded-xl transition-all duration-200"
+            >
+              <FileText className="w-4 h-4" />
+              Notes
             </TabsTrigger>
             <TabsTrigger 
               value="statistics" 
@@ -58,6 +66,10 @@ export function AppInner() {
 
         <TabsContent value="tasks" className="space-y-6">
           <TaskList />
+        </TabsContent>
+
+        <TabsContent value="notes" className="space-y-6">
+          <Notes />
         </TabsContent>
 
         <TabsContent value="statistics" className="space-y-6">

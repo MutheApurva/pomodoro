@@ -36,3 +36,12 @@ export interface Statistics {
   averageSessionsPerDay: number;
   streakDays: number;
 }
+
+export interface Note {
+  id: number;
+  title: string;
+  content: string;
+  type: 'text' | 'drawing';
+  createdAt: Date;
+  updatedAt: Date;
+}
